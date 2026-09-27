@@ -15,7 +15,7 @@ import numpy as np
 def add_gaussian_noise(
     image: np.ndarray,
     mean: float = 0.0,
-    std: float = 25.0,
+    std: float = 40.0,
     seed: Optional[int] = 42,
 ) -> np.ndarray:
     """
@@ -28,7 +28,7 @@ def add_gaussian_noise(
     Args:
         image (np.ndarray): Original image (2D grayscale or 3D color, uint8).
         mean (float): Mean of the normal distribution (default: 0.0).
-        std (float): Standard deviation of the normal distribution (default: 25.0).
+        std (float): Standard deviation of the normal distribution (default: 40.0).
         seed (Optional[int]): Random seed for reproducible experiments (default: 42).
 
     Returns:

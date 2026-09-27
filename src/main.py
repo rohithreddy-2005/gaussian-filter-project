@@ -44,7 +44,7 @@ def run_pipeline(
     output_dir: Path,
     noise_type: str = "gaussian",
     gaussian_mean: float = 0.0,
-    gaussian_std: float = 25.0,
+    gaussian_std: float = 40.0,
     sp_density: float = 0.02,
     kernel_sizes: List[int] = None,
     seed: int = 42,
@@ -57,7 +57,7 @@ def run_pipeline(
         output_dir (Path): Root outputs directory.
         noise_type (str): 'gaussian' or 'salt_and_pepper'.
         gaussian_mean (float): Mean for Gaussian noise (default: 0.0).
-        gaussian_std (float): Standard deviation for Gaussian noise (default: 25.0).
+        gaussian_std (float): Standard deviation for Gaussian noise (default: 40.0).
         sp_density (float): Density for salt-and-pepper noise (default: 0.02).
         kernel_sizes (List[int]): List of kernel sizes (default: [3, 5, 7, 9]).
         seed (int): Seed for reproducible noise generation.
@@ -282,7 +282,7 @@ def main():
     parser.add_argument(
         "--gaussian-std",
         type=float,
-        default=25.0,
+        default=40.0,
         help="Standard deviation for Gaussian noise",
     )
     parser.add_argument(
