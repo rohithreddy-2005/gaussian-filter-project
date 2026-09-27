@@ -11,15 +11,15 @@
 * **Problem Statement:** Image acquisition sensors introduce corruptive noise (thermal noise, photon shot noise, transmission errors) degrading downstream vision tasks.
 * **Technical Scope:**
   * Evaluated across 4 kernel dimensions ($3\times3$, $5\times5$, $7\times7$, $9\times9$) with dynamically computed $\sigma$.
-  * Benchmarked against Additive White Gaussian Noise (AWGN) and Salt-and-Pepper impulse noise.
+  * Benchmarked under standardized heavy Additive White Gaussian Noise (AWGN, $\sigma=50$) and Salt-and-Pepper impulse noise ($2\%$).
 * **Evaluation Framework:** Quantitative evaluation via Mean Squared Error (MSE) and Peak Signal-to-Noise Ratio (PSNR), combined with visual fidelity inspection.
-* **Key Finding:** Gaussian filtering delivers up to $+11.7$ dB PSNR gain on continuous gradients, while structured scenes exhibit an optimal threshold at $3\times3$ or $5\times5$ before edge-blur degradation dominates.
+* **Key Finding:** Gaussian filtering delivers up to $+13.2$ dB PSNR gain on continuous gradients, while natural scenes under heavy noise ($\sigma=50$) achieve optimal restoration with larger $7\times7$ and $9\times9$ kernels to suppress strong variance.
 
 ---
 
 ## Slide 2: Literature Review
 * **Image Degradation Models:**
-  * *Gaussian Noise (AWGN):* Continuous, zero-mean normal distribution ($\mu=0, \sigma=25$); models thermal sensor agitation.
+  * *Gaussian Noise (AWGN):* Continuous, zero-mean normal distribution ($\mu=0, \sigma=50$); models heavy thermal sensor agitation.
   * *Salt-and-Pepper Noise:* Discrete impulse spikes ($0$ or $255$); models bit errors and faulty sensor diodes.
 * **Spatial Low-Pass Filtering Fundamentals:**
   * High-frequency spatial variations correspond to fine detail and noise; low frequencies represent structural regions.
@@ -37,27 +37,28 @@
 ## Slide 3: Methodology & Architecture
 * **Modular Pipeline Architecture (5-Stage Flow):**
   1. *Image Ingestion (FR-1):* Loads `.jpg`, `.jpeg`, `.png`; auto-generates 3 synthetic test patterns (shapes, gradient, checkerboard) if empty.
-  2. *Noise Simulation (FR-2):* Injects parameterized AWGN ($\sigma=25$) or Salt-and-Pepper ($2\%$) with deterministic random seeding.
+  2. *Noise Simulation (FR-2):* Injects parameterized AWGN ($\sigma=50$) or Salt-and-Pepper ($2\%$) with deterministic random seeding.
   3. *Gaussian Filtering (FR-3):* Convolves image using OpenCV `cv2.GaussianBlur` with border reflection across $3\times3$, $5\times5$, $7\times7$, $9\times9$.
   4. *Quantitative Metrics (FR-5):* Computes exact MSE and PSNR against pristine ground truth.
   5. *Visualization & Export (FR-4 & FR-6):* Renders side-by-side triptychs, multi-kernel boards, and dual-axis performance curves.
 * **Auto-Sigma Heuristic:** $\sigma = 0.3 \cdot ((K - 1) \cdot 0.5 - 1) + 0.8$ ($K=3 \rightarrow 0.8$, $K=5 \rightarrow 1.1$, $K=7 \rightarrow 1.4$, $K=9 \rightarrow 1.7$).
-* **Performance Constraint:** Core denoising and evaluation executes in $< 0.25$ s per image (surpassing the $< 2.0$ s project requirement).
+* **Performance Constraint:** Core denoising and evaluation executes in $< 0.40$ s per image (surpassing the $< 2.0$ s project requirement).
 
 ---
 
 ## Slide 4: Results & Conclusion
-* **Quantitative Findings (Benchmark Summary on Gaussian Noise):**
-  * *Photographic Imagery (Lena / sample1_clean):* Optimal at $5\times5$ (PSNR $20.36\text{ dB} \rightarrow 27.78\text{ dB }(3\times3) \rightarrow 29.06\text{ dB }(5\times5)$); MSE drops from $598.4$ to $80.8$.
-  * *Smooth Gradient:* PSNR increases monotonically ($20.35\text{ dB (Noisy)} \rightarrow 28.29\text{ dB }(3\times3) \rightarrow 32.09\text{ dB }(9\times9)$); MSE drops from $600.0$ to $40.2$.
-  * *Geometric Shapes:* Optimal peak at $3\times3$ / $5\times5$ (PSNR $27.04\text{ dB}$, MSE $128.4$); $7\times7$ & $9\times9$ degrade PSNR due to perimeter edge blur.
-  * *Checkerboard Pattern:* Peak at $3\times3$ (PSNR $24.33\text{ dB}$); larger kernels severely round square junctions (PSNR drops to $21.10\text{ dB}$ at $9\times9$).
-* **Noise Sensitivity Observations:**
-  * Highly effective for Gaussian sensor noise (attenuates random high-frequency fluctuations).
+* **Quantitative Findings (Benchmark Summary on Gaussian Noise, $\sigma=50$):**
+  * *Photographic Imagery (Lena / sample1_clean):* Optimal at $9\times9$ (PSNR $14.81\text{ dB (Noisy)} \rightarrow 22.57\text{ dB }(3\times3) \rightarrow 24.88\text{ dB }(5\times5) \rightarrow 26.05\text{ dB }(9\times9)$); MSE drops from $2147.8$ to $161.3$ (+11.24 dB gain).
+  * *Real Scenes (sample2 & s4):* Optimal at $9\times9$ (sample2 PSNR reaches $26.76\text{ dB}$, $+11.66\text{ dB}$ gain; s4 reaches $25.29\text{ dB}$, $+9.79\text{ dB}$ gain).
+  * *Smooth Gradient:* Monotonic PSNR increase ($14.79\text{ dB (Noisy)} \rightarrow 22.74\text{ dB }(3\times3) \rightarrow 28.02\text{ dB }(9\times9)$); MSE drops from $2158.7$ to $102.5$ (+13.23 dB gain).
+  * *Geometric Shapes:* Optimal peak at $7\times7$ (PSNR $23.21\text{ dB}$, MSE $310.6$, $+7.03\text{ dB}$ gain); $9\times9$ begins perimeter edge blurring.
+  * *Checkerboard Pattern:* Optimal peak at $5\times5$ (PSNR $21.36\text{ dB}$, $+6.03\text{ dB}$ gain); larger kernels severely round square junctions.
+* **Noise Sensitivity & Kernel Scaling Insights:**
+  * Heavier noise ($\sigma=50$) shifts optimal kernel sizes upward ($7\times7, 9\times9$ win on complex natural scenes) because aggressive spatial averaging is required to suppress severe noise variance.
   * Ineffective for Salt-and-Pepper noise: spreads impulse spikes into blurry halos (requires non-linear median filtering).
 * **Engineering Recommendations:**
-  * Select $3\times3$ or $5\times5$ for general vision preprocessing (object detection, edge detection).
-  * Reserve larger kernels ($7\times7+$) for background blur, depth simulation, or low-texture sky/gradient regions.
+  * Use $3\times3$ or $5\times5$ when edge preservation is paramount under mild-to-moderate noise.
+  * Employ larger kernels ($7\times7, 9\times9$) under heavy AWGN regimes ($\sigma \ge 50$) or for smooth continuous backgrounds.
 
 ---
 

@@ -55,7 +55,7 @@ gaussian_filter_project/
 | Module | File | Requirement Description |
 | :--- | :--- | :--- |
 | **FR-1** | `src/image_loader.py` | Load `.jpg`, `.jpeg`, `.png` images, handle corrupt/missing files, provide visual previews, and automatically synthesize test patterns if directory is empty. |
-| **FR-2** | `src/noise_generator.py` | Add Additive White Gaussian Noise ($\mu=0, \sigma=25$) or Salt-and-Pepper impulse noise ($2\%$). Seeded for exact reproducibility. |
+| **FR-2** | `src/noise_generator.py` | Add Additive White Gaussian Noise ($\mu=0, \sigma=50$) or Salt-and-Pepper impulse noise ($2\%$). Seeded for exact reproducibility. |
 | **FR-3** | `src/gaussian_filter.py` | Apply `cv2.GaussianBlur` across kernels $3\times3$, $5\times5$, $7\times7$, $9\times9$ with auto-computed $\sigma$ ($\sigma = 0.3 \cdot ((K - 1) \cdot 0.5 - 1) + 0.8$). |
 | **FR-4** | `src/visualizer.py` | Generate side-by-side figure (Original $\rightarrow$ Noisy $\rightarrow$ Filtered) and full multi-kernel grids with annotated metrics. |
 | **FR-5** | `src/metrics.py` | Compute Mean Squared Error (MSE) and Peak Signal-to-Noise Ratio (PSNR), formatted as specified, and generate response curves. |
@@ -141,7 +141,7 @@ python src/main.py --noise-type gaussian --gaussian-std 35.0 --seed 123
 | `--data-dir` | `str` | `data/sample_images` | Path to folder containing input images |
 | `--output-dir` | `str` | `outputs` | Root output directory for all generated artifacts |
 | `--noise-type` | `str` | `gaussian` | Degradation type: `gaussian` or `salt_and_pepper` |
-| `--gaussian-std` | `float` | `25.0` | Standard deviation for Gaussian noise |
+| `--gaussian-std` | `float` | `50.0` | Standard deviation for Gaussian noise |
 | `--sp-density` | `float` | `0.02` | Percentage of corrupted pixels (0.02 = 2%) |
 | `--seed` | `int` | `42` | Random seed for deterministic reproducibility |
 

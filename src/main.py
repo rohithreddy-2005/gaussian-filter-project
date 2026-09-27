@@ -29,7 +29,11 @@ if str(CURRENT_DIR) not in sys.path:
     sys.path.insert(0, str(CURRENT_DIR))
 
 from image_loader import load_all_images
-from noise_generator import add_gaussian_noise, add_salt_and_pepper_noise
+from noise_generator import (
+    DEFAULT_GAUSSIAN_STD,
+    add_gaussian_noise,
+    add_salt_and_pepper_noise,
+)
 from gaussian_filter import apply_multiple_kernels, compute_auto_sigma
 from metrics import compute_mse, compute_psnr, print_metrics, plot_performance_graphs
 from visualizer import (
@@ -44,7 +48,7 @@ def run_pipeline(
     output_dir: Path,
     noise_type: str = "gaussian",
     gaussian_mean: float = 0.0,
-    gaussian_std: float = 40.0,
+    gaussian_std: float = DEFAULT_GAUSSIAN_STD,
     sp_density: float = 0.02,
     kernel_sizes: List[int] = None,
     seed: int = 42,
@@ -57,7 +61,7 @@ def run_pipeline(
         output_dir (Path): Root outputs directory.
         noise_type (str): 'gaussian' or 'salt_and_pepper'.
         gaussian_mean (float): Mean for Gaussian noise (default: 0.0).
-        gaussian_std (float): Standard deviation for Gaussian noise (default: 40.0).
+        gaussian_std (float): Standard deviation for Gaussian noise (default: 50.0).
         sp_density (float): Density for salt-and-pepper noise (default: 0.02).
         kernel_sizes (List[int]): List of kernel sizes (default: [3, 5, 7, 9]).
         seed (int): Seed for reproducible noise generation.
@@ -282,8 +286,8 @@ def main():
     parser.add_argument(
         "--gaussian-std",
         type=float,
-        default=40.0,
-        help="Standard deviation for Gaussian noise",
+        default=DEFAULT_GAUSSIAN_STD,
+        help="Standard deviation for Gaussian noise (default: 50.0)",
     )
     parser.add_argument(
         "--sp-density",
