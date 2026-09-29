@@ -118,7 +118,30 @@ To run experiments on real-world imagery:
 
 ---
 
-## 🏃 Running the Pipeline
+## 🌐 Interactive Localhost Web Interface
+
+Launch the interactive web application to upload images, configure noise/kernel parameters in real-time, inspect side-by-side split comparisons, and explore dataset results in your web browser:
+
+```bash
+# From workspace root:
+python app.py
+
+# Or directly with virtual environment python:
+.venv\Scripts\python.exe app.py
+```
+Open **[http://localhost:8000](http://localhost:8000)** in any web browser.
+
+### Key Web Interface Features:
+- 📤 **Drag & Drop Upload**: Upload any PNG or JPEG image with automatic validation.
+- 🎛️ **Live Parameter Controls**: Tune Gaussian noise ($\mu$, $\sigma_n$) or Salt-and-Pepper density ($d$) with real-time sliders.
+- 🎚️ **Interactive Split-Screen Slider**: Compare Clean vs Noisy vs Filtered side-by-side with a draggable divider.
+- 🖼️ **Multi-Kernel Grid**: Card-by-card visual breakdown ($3\times3$, $5\times5$, $7\times7$, $9\times9$) with MSE and PSNR badges.
+- 📈 **Dynamic Performance Curves**: Interactive SVG response curves + Matplotlib publication-grade plots.
+- 🗂️ **Results Gallery**: Instant inspection of all pre-computed project outputs and sample datasets with one-click lightbox zoom.
+
+---
+
+## 🏃 Running the CLI Pipeline
 
 ### Basic Execution (Default Gaussian Noise)
 ```bash

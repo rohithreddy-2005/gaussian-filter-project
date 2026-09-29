@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VisionLab — Gaussian Filter Studio</title>
+  <meta name="description" content="Clean, minimal Gaussian Filter Low-Pass Image Smoothing Studio." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="dark-theme">
+
+  <!-- Minimal Header -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="brand">
+        <span class="brand-dot"></span>
+        <span class="brand-title">VisionLab</span>
+        <span class="brand-sub">Gaussian Filter Studio</span>
+      </div>
+
+      <nav class="nav-tabs" role="tablist">
+        <button type="button" class="tab-btn active" id="tab-btn-studio" data-target="panel-studio" role="tab" aria-selected="true">Studio</button>
+        <button type="button" class="tab-btn" id="tab-btn-how" data-target="panel-how" role="tab" aria-selected="false">How it works</button>
+      </nav>
+
+      <div class="header-actions">
+        <button type="button" class="btn btn-demo-pill" id="btn-play-demo" title="Auto-play 4-step walkthrough">
+          ▶ Play demo
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Demo Mode Floating Banner -->
+  <div class="demo-banner hidden" id="demo-banner">
+    <div class="demo-banner-inner">
+      <div class="demo-badge" id="demo-badge">Step 1 of 4</div>
+      <div class="demo-info">
+        <div class="demo-title" id="demo-title">Original Reference Image</div>
+        <div class="demo-caption" id="demo-caption">Loaded pristine ground truth reference from the benchmark dataset.</div>
+      </div>
+      <div class="demo-controls">
+        <button type="button" class="btn btn-ghost btn-sm" id="demo-btn-prev">⏮ Prev</button>
+        <button type="button" class="btn btn-ghost btn-sm" id="demo-btn-playpause">⏸ Pause</button>
+        <button type="button" class="btn btn-ghost btn-sm" id="demo-btn-next">Next ⏭</button>
+        <button type="button" class="btn btn-ghost btn-sm btn-close-demo" id="demo-btn-close">✕</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content Wrapper -->
+  <main class="page-content">
+
+    <!-- ============================================================ -->
+    <!-- TAB 1: STUDIO (Clean, Minimal, Top-to-Bottom Flow)           -->
+    <!-- ============================================================ -->
+    <section class="tab-panel active" id="panel-studio" role="tabpanel">
+      <div class="studio-container">
+
+        <!-- STEP 1: CHOOSE AN IMAGE -->
+        <section class="step-card" id="step-choose">
+          <div class="step-header">
+            <span class="step-number">1</span>
+            <div>
+              <h2 class="step-title">Choose an image</h2>
+              <p class="step-desc">Select a course benchmark image or upload your own.</p>
+            </div>
+          </div>
+
+          <!-- Horizontal Row of Thumbnails + Upload Button -->
+          <div class="thumbnails-scroll-wrap">
+            <div class="thumbnails-row" id="thumbnails-row">
+              <span class="loading-hint">Loading dataset images...</span>
+            </div>
+            <input type="file" id="file-input" accept="image/png,image/jpeg,image/jpg" hidden />
+          </div>
+
+          <!-- Metadata text strictly below the thumbnail row, never overlapping -->
+          <div class="selected-meta-bar" id="selected-meta-bar">
+            <span class="meta-label">Selected:</span>
+            <span class="meta-name" id="selected-name" title="No image selected">sample1_clean.png</span>
+            <span class="meta-dot">·</span>
+            <span class="meta-dim" id="selected-dim">512 × 512 px</span>
+            <span class="meta-dot">·</span>
+            <span class="meta-size" id="selected-size">142 KB</span>
+          </div>
+        </section>
+
+        <!-- STEP 2: ADD NOISE -->
+        <section class="step-card" id="step-noise">
+          <div class="step-header">
+            <span class="step-number">2</span>
+            <div>
+              <h2 class="step-title">Add noise</h2>
+              <p class="step-desc">Simulate camera sensor degradation with controlled noise.</p>
+            </div>
+          </div>
+
+          <!-- At most 3 visible controls: (1) Toggle, (2) Slider, (3) Apply Button -->
+          <div class="noise-controls-grid">
+            
+            <!-- Control 1: Noise Type Toggle -->
+            <div class="control-unit">
+              <label class="control-heading">Noise Model</label>
+              <div class="pill-toggle" role="radiogroup">
+                <button type="button" class="pill-option active" data-noise="gaussian">Gaussian</button>
+                <button type="button" class="pill-option" data-noise="salt_and_pepper">Salt & Pepper</button>
+              </div>
+            </div>
+
+            <!-- Control 2: Single Noise Amount Slider -->
+            <div class="control-unit flex-grow">
+              <div class="slider-title-row">
+                <label for="slider-noise-amount" class="control-heading">Noise amount</label>
+                <span class="slider-val-badge" id="val-noise-badge">50 (Recommended)</span>
+              </div>
+              <input type="range" id="slider-noise-amount" min="5" max="100" step="1" value="50" class="clean-slider" />
+            </div>
+
+            <!-- Control 3: Apply Button -->
+            <div class="control-unit btn-unit">
+              <button type="button" class="btn btn-primary" id="btn-apply-filter">
+                <span>Filter Image</span>
+              </button>
+            </div>
+
+          </div>
+
+          <!-- Collapsed Advanced Settings (<details>) -->
+          <details class="advanced-disclosure" id="advanced-disclosure">
+            <summary class="advanced-summary">
+              <span>Advanced settings</span>
+              <span class="summary-arrow">▾</span>
+            </summary>
+            <div class="advanced-body">
+              <div class="adv-field" id="adv-mean-field">
+                <label for="input-mean">Distribution Mean (μ):</label>
+                <input type="number" id="input-mean" value="0.0" step="0.5" class="clean-input" />
+              </div>
+              <div class="adv-field">
+                <label for="input-seed">Random Seed:</label>
+                <div class="input-btn-group">
+                  <input type="number" id="input-seed" value="42" class="clean-input" />
+                  <button type="button" class="btn btn-ghost btn-sm" id="btn-seed-random" title="Randomize seed">🎲</button>
+                </div>
+              </div>
+              <div class="adv-field adv-checkbox-field">
+                <label class="check-label">
+                  <input type="checkbox" id="check-save-disk" checked />
+                  <span>Export comparison PNGs to <code>outputs/</code></span>
+                </label>
+              </div>
+            </div>
+          </details>
+
+          <!-- Loading Progress State -->
+          <div class="processing-loader hidden" id="processing-loader">
+            <div class="loader-spinner"></div>
+            <span id="processing-msg">Computing Gaussian convolution on full image array...</span>
+          </div>
+        </section>
+
+        <!-- STEP 3: RESULT & BEFORE/AFTER COMPARISON -->
+        <section class="step-card" id="step-result">
+          <div class="step-header">
+            <span class="step-number">3</span>
+            <div>
+              <h2 class="step-title">Result</h2>
+              <p class="step-desc">Drag the divider to compare noisy input with smoothed output.</p>
+            </div>
+          </div>
+
+          <!-- One Large Before/After Comparison Slider -->
+          <div class="slider-wrapper">
+            <div class="split-viewport" id="split-viewport">
+              <img id="split-img-bottom" class="split-img split-bottom" alt="Filtered Image" />
+              <div class="split-top-clip" id="split-top-clip">
+                <img id="split-img-top" class="split-img split-top" alt="Noisy Image" />
+              </div>
+              <div class="split-handle" id="split-handle">
+                <div class="handle-bar"></div>
+                <div class="handle-circle">↔</div>
+              </div>
+
+              <!-- Corner Watermark Labels -->
+              <span class="corner-tag tag-left">Noisy input</span>
+              <span class="corner-tag tag-right" id="tag-filtered-label">Filtered (5×5)</span>
+            </div>
+
+            <!-- Hint under slider -->
+            <p class="slider-hint">Click anywhere on the image to choose the patch for the convolution animation.</p>
+          </div>
+
+          <!-- Under the Slider: 4 Kernel Buttons (Instant update) -->
+          <div class="kernel-selector-row">
+            <span class="kernel-row-label">Kernel Window:</span>
+            <div class="kernel-buttons-group" id="kernel-buttons-group">
+              <button type="button" class="k-btn" data-k="3">3×3</button>
+              <button type="button" class="k-btn active" data-k="5">★ 5×5 (Best)</button>
+              <button type="button" class="k-btn" data-k="7">7×7</button>
+              <button type="button" class="k-btn" data-k="9">9×9</button>
+            </div>
+            <span class="latency-label" id="latency-label">Denoised in 42 ms</span>
+          </div>
+
+          <!-- METRICS CARD & TAKEAWAY -->
+          <div class="metrics-card" id="metrics-card">
+            <div class="metrics-grid">
+              
+              <!-- Metric 1: MSE -->
+              <div class="metric-box">
+                <span class="metric-title">Mean Squared Error (MSE)</span>
+                <div class="metric-val-row">
+                  <span class="metric-number" id="metric-mse">140.64</span>
+                  <span class="metric-arrow arrow-down" id="metric-mse-delta">↓ 2007.18</span>
+                </div>
+                <span class="metric-baseline" id="metric-mse-baseline">Noisy baseline: 2147.82</span>
+              </div>
+
+              <!-- Metric 2: PSNR -->
+              <div class="metric-box">
+                <span class="metric-title">Peak SNR (PSNR)</span>
+                <div class="metric-val-row">
+                  <span class="metric-number" id="metric-psnr">26.65 dB</span>
+                  <span class="metric-arrow arrow-up" id="metric-psnr-delta">↑ 11.84 dB</span>
+                </div>
+                <span class="metric-baseline" id="metric-psnr-baseline">Noisy baseline: 14.81 dB</span>
+              </div>
+
+              <!-- Metric 3: Tiny Sparkline Chart -->
+              <div class="metric-box sparkline-box">
+                <span class="metric-title">PSNR vs. Kernel Size</span>
+                <div class="sparkline-chart-wrap" id="sparkline-wrap">
+                  <svg id="sparkline-svg" viewBox="0 0 160 55" width="100%" height="55"></svg>
+                </div>
+                <span class="sparkline-caption" id="sparkline-caption">Optimal: 5×5 (Max Fidelity)</span>
+              </div>
+
+            </div>
+
+            <!-- Plain-Language Takeaway Sentence -->
+            <div class="takeaway-banner">
+              <span class="takeaway-icon">💡</span>
+              <p class="takeaway-text" id="takeaway-text">Bigger kernels remove more noise but blur more detail.</p>
+            </div>
+
+            <!-- Bottom Actions -->
+            <div class="studio-bottom-actions">
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-open-animator">
+                🔬 Watch how it works
+              </button>
+              <button type="button" class="btn btn-ghost btn-sm" id="btn-download-summary">
+                📥 Download summary
+              </button>
+            </div>
+
+          </div>
+
+        </section>
+
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- TAB 2: HOW IT WORKS (STEP-BY-STEP GUIDED WALKTHROUGH)         -->
+    <!-- ============================================================ -->
+    <section class="tab-panel" id="panel-how" role="tabpanel">
+      <div class="walkthrough-container">
+
+        <!-- Top Walkthrough Navigation Header -->
+        <div class="walk-nav-header">
+          <div class="walk-steps-tracker" role="tablist">
+            <button type="button" class="walk-step-pill active" data-step="1">
+              <span class="pill-num">1</span>
+              <span class="pill-txt">The Image is Numbers</span>
+            </button>
+            <button type="button" class="walk-step-pill" data-step="2">
+              <span class="pill-num">2</span>
+              <span class="pill-txt">Add Noise</span>
+            </button>
+            <button type="button" class="walk-step-pill" data-step="3">
+              <span class="pill-num">3</span>
+              <span class="pill-txt">Build the Kernel</span>
+            </button>
+            <button type="button" class="walk-step-pill" data-step="4">
+              <span class="pill-num">4</span>
+              <span class="pill-txt">Slide, Multiply, Add</span>
+            </button>
+            <button type="button" class="walk-step-pill" data-step="5">
+              <span class="pill-num">5</span>
+              <span class="pill-txt">Measure the Result</span>
+            </button>
+            <button type="button" class="walk-step-pill" data-step="6">
+              <span class="pill-num">6</span>
+              <span class="pill-txt">Choose Kernel Size</span>
+            </button>
+          </div>
+
+          <button type="button" class="btn btn-secondary btn-sm btn-formula-sheet" id="btn-open-formula-sheet">
+            📑 Formula sheet
+          </button>
+        </div>
+
+        <!-- Walkthrough Main Stage (Strict 4-Part Layout per Step) -->
+        <div class="walkthrough-stage">
+
+          <!-- ======================================================== -->
+          <!-- STEP 1: The image is numbers                             -->
+          <!-- ======================================================== -->
+          <article class="walk-step-card active" id="walk-step-1" data-step-index="1">
+            <div class="step-card-header">
+              <div class="step-badge-tag">Step 1 of 6</div>
+              <h2 class="step-card-title">The Image is Numbers</h2>
+            </div>
+
+            <!-- (a) Plain-English Explanation -->
+            <div class="walk-part walk-part-a">
+              <span class="part-badge">A. Plain-English Concept</span>
+              <p class="plain-concept-text">
+                A digital image is a two-dimensional grid of numerical samples where each pixel stores three 8-bit integers ranging from 0 (black) to 255 (maximum brightness) representing Red, Green, and Blue light intensities.
+              </p>
+            </div>
+
+            <!-- (b) Mathematical Formula & Legend -->
+            <div class="walk-part walk-part-b">
+              <span class="part-badge">B. Formula & Symbol Legend</span>
+              <div class="formula-box">
+                <div class="math-expr">
+                  <span class="math-var">I</span>(<span class="math-var">x</span>, <span class="math-var">y</span>, <span class="math-var">c</span>) &isin; {0, 1, 2, &hellip;, 255}
+                  <span class="math-sep">&nbsp;&nbsp;|&nbsp;&nbsp;</span>
+                  <span class="math-var">c</span> &isin; {Red, Green, Blue}
+                </div>
+                <div class="math-in-words">
+                  <strong>In words:</strong> The intensity of the image at horizontal column <span class="math-var">x</span>, vertical row <span class="math-var">y</span>, and color channel <span class="math-var">c</span> is an unsigned 8-bit integer between 0 and 255.
+                </div>
+              </div>
+
+              <div class="symbol-table-wrap">
+                <table class="symbol-table">
+                  <thead>
+                    <tr>
+                      <th>Symbol</th>
+                      <th>Mathematical Meaning</th>
+                      <th>Current Demo Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><span class="math-var">x</span>, <span class="math-var">y</span></td>
+                      <td>Discrete spatial coordinates: column (<span class="math-var">0 &le; x &lt; W</span>) and row (<span class="math-var">0 &le; y &lt; H</span>)</td>
+                      <td id="legend-s1-coords">W = 512 px, H = 512 px</td>
+                    </tr>
+                    <tr>
+                      <td><span class="math-var">c</span></td>
+                      <td>Spectral color channel (Red, Green, Blue)</td>
+                      <td id="legend-s1-channel">Active channel: Luma (Y)</td>
+                    </tr>
+                    <tr>
+                      <td><span class="math-var">2<sup>8</sup> = 256</span></td>
+                      <td>Quantization levels: 8-bit integer precision per channel per pixel</td>
+                      <td>Range [0, 255] (256 discrete levels)</td>
+                    </tr>
+                    <tr>
+                      <td><span class="math-var">Y</span> (Luma)</td>
+                      <td>Perceptual grayscale intensity: <span class="math-mono">0.299R + 0.587G + 0.114B</span> (ITU-R BT.601)</td>
+                      <td id="legend-s1-luma">Y = 0.299R + 0.587G + 0.114B</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- (c) Worked Example with Real Numbers -->
+            <div class="walk-part walk-part-c">
+              <span class="part-badge">C. Worked Example (Real Pixel Values)</span>
+              <div class="worked-box" id="step1-worked-box">
+                <div class="worked-header-row">
+                  <span class="worked-loc" id="step1-inspect-loc">Inspecting Patch Pixel (r=3, c=3) &middot; Image (x=259, y=259)</span>
+                  <span class="worked-hint">Click any cell in the 8×8 grid below to inspect its exact values</span>
+                </div>
+                <div class="worked-channels-calc">
+                  <div class="channel-val-tag tag-r">Red: <strong id="step1-val-r">142</strong></div>
+                  <div class="channel-val-tag tag-g">Green: <strong id="step1-val-g">138</strong></div>
+                  <div class="channel-val-tag tag-b">Blue: <strong id="step1-val-b">129</strong></div>
+                  <div class="channel-val-tag tag-luma">Luma (Y): <strong id="step1-val-luma">138</strong></div>
+                </div>
+                <div class="worked-calc-line" id="step1-calc-breakdown">
+                  <strong>Conversion Math:</strong> Y = (0.299 &times; 142) + (0.587 &times; 138) + (0.114 &times; 129) = 42.46 + 81.01 + 14.71 = <strong>138</strong>
+                </div>
+              </div>
+            </div>
+
+            <!-- (d) Interactive Visual -->
+            <div class="walk-part walk-part-d">
+              <div class="part-d-header">
+                <span class="part-badge">D. Visual (8×8 Real Pixel Matrix)</span>
+                <div class="channel-pills" role="radiogroup" id="step1-chan-selector">
+                  <button type="button" class="chan-btn active" data-chan="luma">Luma (Gray)</button>
+                  <button type="button" class="chan-btn" data-chan="r">Red (R)</button>
+                  <button type="button" class="chan-btn" data-chan="g">Green (G)</button>
+                  <button type="button" class="chan-btn" data-chan="b">Blue (B)</button>
+                </div>
+              </div>
+
+              <div class="step1-visual-wrap">
+                <div class="matrix-8x8-board" id="step1-matrix-grid"></div>
+                <div class="matrix-legend-row">
+                  <span>Intensity Scale:</span>
+                  <div class="intensity-gradient-bar"></div>
+                  <span class="scale-label">0 (Black) &rarr; 255 (White)</span>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- ======================================================== -->
+          <!-- STEP 2: Add noise                                        -->
+          <!-- ======================================================== -->
+          <article class="walk-step-card" id="walk-step-2" data-step-index="2">
+            <div class="step-card-header">
+              <div class="step-badge-tag">Step 2 of 6</div>
+              <h2 class="step-card-title">Add Noise</h2>
+            </div>
+
+            <!-- (a) Plain-English Explanation -->
+            <div class="walk-part walk-part-a">
+              <span class="part-badge">A. Plain-English Concept</span>
+              <p class="plain-concept-text">
+                Noise simulates unwanted sensor variations by adding random Gaussian fluctuations or impulse dropouts to each pixel and clamping the resulting intensities to the valid hardware range of 0 to 255.
+              </p>
+            </div>
+
+            <!-- (b) Mathematical Formula & Legend -->
+            <div class="walk-part walk-part-b">
+              <span class="part-badge">B. Formula & Symbol Legend</span>
+              <div class="formula-box" id="step2-formula-box">
+                <div class="math-expr" id="step2-formula-expr">
+                  <span class="math-var">I</span><sub>noisy</sub>(<span class="math-var">x</span>, <span class="math-var">y</span>) = clip(<span class="math-var">I</span><sub>clean</sub>(<span class="math-var">x</span>, <span class="math-var">y</span>) + <span class="math-var">N</span>(<span class="math-var">x</span>, <span class="math-var">y</span>), 0, 255)
+                  <span class="math-sep">&nbsp;&nbsp;|&nbsp;&nbsp;</span>
+                  <span class="math-var">N</span> &sim; <span class="math-func">N</span>(<span class="math-var">&mu;</span>, <span class="math-var">&sigma;<sub>n</sub><sup>2</sup></span>)
+                </div>
+                <div class="math-in-words" id="step2-words-text">
+                  <strong>In words:</strong> The degraded noisy pixel equals the original clean value plus a normally distributed random perturbation, clamped strictly to stay between 0 and 255.
+                </div>
+              </div>
+
+              <div class="symbol-table-wrap">
+                <table class="symbol-table">
+                  <thead>
+                    <tr>
+                      <th>Symbol</th>
+                      <th>Mathematical Meaning</th>
+                      <th>Current Demo Value</th>
+                    </tr>
+                  </thead>
+                  <tbody id="step2-legend-body">
+                    <tr>
+                      <td><span class="math-var">I</span><sub>clean</sub></td>
+                      <td>Original pristine pixel intensity</td>
+                      <td>Range [0, 255]</td>
+                    </tr>
+                    <tr>
+                      <td><span class="math-var">N</span></td>
+                      <td>Random noise sample drawn from distribution</td>
+                      <td id="legend-s2-noise-var">Gaussian perturbation</td>
+                    </tr>
+                    <tr>
+                      <td><span class="math-var">&mu;</span></td>
+                      <td>Mean of the noise distribution (systematic bias)</td>
+                      <td id="legend-s2-mean">&mu; = 0.0</td>
+                    </tr>
+                    <tr>
+                      <td><span class="math-var">&sigma;<sub>n</sub></span></td>
+                      <td>Noise standard deviation (controls noise spread/amplitude)</td>
+                      <td id="legend-s2-std">&sigma;<sub>n</sub> = 50.0</td>
+                    </tr>
+                    <tr>
+                      <td><span class="math-mono">clip(v, 0, 255)</span></td>
+                      <td>Clamping function: <span class="math-mono">max(0, min(255, v))</span></td>
+                      <td>Enforces unsigned 8-bit dynamic range</td>
+                    </tr>
+                    <tr>
+                      <td><span class="math-var">Seed</span></td>
+                      <td>Pseudo-random generator seed; identical seed yields identical noise field</td>
+                      <td id="legend-s2-seed">Seed = 42 (Reproducible)</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- (c) Worked Example with Real Numbers -->
+            <div class="walk-part walk-part-c">
+              <span class="part-badge">C. Worked Example (Real Noise Addition & Clipping)</span>
+              <div class="worked-box" id="step2-worked-box">
+                <div class="worked-calc-line highlight-calc" id="step2-calc-line">
+                  <strong>Pixel Calculation at (r=3, c=3):</strong> Clean (147) + Noise (-25) = 122 &rarr; <strong>Noisy = 122</strong> (Inside valid range [0, 255])
+                </div>
+
+                <div class="clipping-notice-box" id="step2-clipping-box">
+                  <span class="clip-icon">⚠️</span>
+                  <div class="clip-content" id="step2-clipping-text">
+                    <strong>Clipping Analysis:</strong> In this 8×8 patch, all sums remained within [0, 255]. If a sum exceeded 255 (e.g. 235 + 32 = 267), clip(267, 0, 255) bounds it to 255 to prevent overflow.
+                  </div>
+                </div>
+
+                <div class="seed-notice-line">
+                  <span class="seed-icon">🎲</span>
+                  <span id="step2-seed-desc">Random Seed <strong>42</strong> is active: The same seed produces the exact same pseudo-random noise matrix on every run, ensuring scientific repeatability.</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- (d) Interactive Visual -->
+            <div class="walk-part walk-part-d">
+              <span class="part-badge">D. Visual (3 Linked Grids: Clean + Noise = Noisy)</span>
+              <div class="three-grids-container">
+                <div class="linked-grid-col">
+                  <div class="grid-col-title">1. Clean Patch (I<sub>clean</sub>)</div>
+                  <div class="matrix-8x8-board mini-grid" id="step2-clean-grid"></div>
+                </div>
+                <div class="grid-operator-symbol">+</div>
+                <div class="linked-grid-col">
+                  <div class="grid-col-title">2. Added Noise (N)</div>
+                  <div class="matrix-8x8-board mini-grid" id="step2-noise-grid"></div>
+                </div>
+                <div class="grid-operator-symbol">=</div>
+                <div class="linked-grid-col">
+                  <div class="grid-col-title">3. Noisy Result (I<sub>noisy</sub>)</div>
+                  <div class="matrix-8x8-board mini-grid" id="step2-noisy-grid"></div>
+                </div>
+              </div>
+              <p class="linked-hint">Click any cell above to inspect the exact addition and clipping math for that coordinate.</p>
+            </div>
+          </article>
+
+          <!-- ======================================================== -->
+          <!-- STEP 3: Build the kernel                                 -->
+          <!-- ======================================================== -->
+          <article class="walk-step-card" id="walk-step-3" data-step-index="3">
+            <div class="step-card-header">
+              <div class="step-badge-tag">Step 3 of 6</div>
+              <h2 class="step-card-title">Build the Kernel</h2>
+            </div>
+
+            <!-- (a) Plain-English Explanation -->
+            <div class="walk-part walk-part-a">
+              <span class="part-badge">A. Plain-English Concept</span>
+              <p class="plain-concept-text">
+                The Gaussian filter kernel is a symmetric square window of weights shaped by a 2D Gaussian bell curve and normalized to sum to exactly 1.0000 so the total image brightness remains unchanged.
+              </p>
+            </div>
+
+            <!-- (b) Mathematical Formula & Legend -->
+            <div class="walk-part walk-part-b">
+              <span class="part-badge">B. Formula & Symbol Legend</span>
+              <div class="formula-box">
+                <div class="math-expr">
+                  <span class="math-var">&sigma;<sub>blur</sub></span> = 0.3 &times; ((<span class="math-var">k</span> &minus; 1) &middot; 0.5 &minus; 1.0) + 0.8
+                </div>
+                <div class="math-expr" style="margin-top: 0.5rem;">
+                  <span class="math-var">G</span>(<span class="math-var">x</span>, <span class="math-var">y</span>) = exp(&minus;(<span class="math-var">x</span><sup>2</sup> + <span class="math-var">y</span><sup>2</sup>) / (2<span class="math-var">&sigma;<sub>blur</sub></span><sup>2</sup>))
+                  <span class="math-sep">&nbsp;&nbsp;|&nbsp;&nbsp;</span>
+                  <span class="math-var">w</span>(<span class="math-var">x</span>, <span class="math-var">y</span>) = <span class="math-var">G</span>(<span class="math-var">x</span>, <span class="math-var">y</span>) / &sum;<sub>u,v</sub> <span class="math-var">G</span>(<span class="math-var">u</span>, <span class="math-var">v</span>)
+                </div>
+                <div class="math-in-words">
+                  <strong>In words:</strong> The blur spread &sigma; is automatically determined by kernel diameter <span class="math-var">k</span>. Raw exponential weights decline with squared distance from the center, and dividing each weight by the sum gives normalized weights that sum to 1.0.
+                </div>
+              </div>
+
+              <!-- Heuristic Sigma Lookup Table -->
+              <div class="sigma-table-wrap">
+                <table class="symbol-table">
+                  <thead>
+                    <tr>
+                      <th>Kernel Size (k)</th>
+                      <th>Radius (r)</th>
+                      <th>Auto-Sigma (&sigma;<sub>blur</sub>) Formula</th>
+                      <th>Calculated Value</th>
+                      <th>Smoothing Behavior</th>
+                    </tr>
+                  </thead>
+                  <tbody id="step3-sigma-table-body">
+                    <tr data-k-row="3">
+                      <td><strong>3&times;3</strong></td>
+                      <td>1</td>
+                      <td>0.3 &times; (0 &minus; 1) + 0.8</td>
+                      <td><strong>0.80</strong></td>
+                      <td>Minimal smoothing, sharpest edges</td>
+                    </tr>
+                    <tr data-k-row="5" class="highlight-row">
+                      <td><strong>★ 5&times;5</strong></td>
+                      <td>2</td>
+                      <td>0.3 &times; (1 &minus; 1) + 0.8</td>
+                      <td><strong>1.10</strong></td>
+                      <td>Optimal denoising & edge balance</td>
+                    </tr>
+                    <tr data-k-row="7">
+                      <td><strong>7&times;7</strong></td>
+                      <td>3</td>
+                      <td>0.3 &times; (2 &minus; 1) + 0.8</td>
+                      <td><strong>1.40</strong></td>
+                      <td>Strong smoothing, subtle edge blur</td>
+                    </tr>
+                    <tr data-k-row="9">
+                      <td><strong>9&times;9</strong></td>
+                      <td>4</td>
+                      <td>0.3 &times; (3 &minus; 1) + 0.8</td>
+                      <td><strong>1.70</strong></td>
+                      <td>Heavy smoothing, noticeable softening</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- (c) Worked Example with Real Numbers -->
+            <div class="walk-part walk-part-c">
+              <span class="part-badge">C. Worked Example (Active Kernel Weights)</span>
+              <div class="worked-box" id="step3-worked-box">
+                <div class="worked-header-row">
+                  <span class="worked-loc" id="step3-kernel-heading">Kernel: 5×5 Window &middot; &sigma;<sub>blur</sub> = 1.100</span>
+                  <div class="mini-k-pills" id="step3-k-btns">
+                    <button type="button" class="mini-k-btn" data-k3="3">3×3</button>
+                    <button type="button" class="mini-k-btn active" data-k3="5">5×5</button>
+                    <button type="button" class="mini-k-btn" data-k3="7">7×7</button>
+                    <button type="button" class="mini-k-btn" data-k3="9">9×9</button>
+                  </div>
+                </div>
+
+                <div class="worked-calc-line" id="step3-center-calc">
+                  <strong>Center Weight (x=0, y=0):</strong> G(0, 0) = exp(0) = 1.0000 &rarr; Normalized: 1.0000 / 7.3225 = <strong>0.1366</strong>
+                </div>
+                <div class="worked-calc-line" id="step3-corner-calc">
+                  <strong>Corner Weight (x=2, y=2):</strong> G(2, 2) = exp(&minus;8 / 2.42) = 0.0367 &rarr; Normalized: 0.0367 / 7.3225 = <strong>0.0050</strong>
+                </div>
+
+                <!-- Sum of Weights Verification Badge -->
+                <div class="unity-gain-badge">
+                  <span class="badge-icon">✓</span>
+                  <span id="step3-sum-text">Sum of weights = 1.0000 (Exact OpenCV cv2.getGaussianKernel)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- (d) Interactive Visual -->
+            <div class="walk-part walk-part-d">
+              <span class="part-badge">D. Visual (k×k Normalized Weights Heatmap)</span>
+              <div class="step3-visual-stage">
+                <div class="kernel-heatmap-container">
+                  <div class="kernel-matrix-grid" id="step3-weights-grid"></div>
+                </div>
+                <div class="separability-note-box">
+                  <strong>Linear Separability (O(2K) Complexity):</strong>
+                  <p>Because the 2D Gaussian is circularly symmetric, 2D convolution equals two successive 1D passes: G(x, y) = G<sub>1D</sub>(x) &middot; G<sub>1D</sub>(y).</p>
+                  <div class="weights-1d-row" id="step3-1d-weights"></div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- ======================================================== -->
+          <!-- STEP 4: Slide, multiply, add                             -->
+          <!-- ======================================================== -->
+          <article class="walk-step-card" id="walk-step-4" data-step-index="4">
+            <div class="step-card-header">
+              <div class="step-badge-tag">Step 4 of 6</div>
+              <h2 class="step-card-title">Slide, Multiply, Add (The Core Step)</h2>
+            </div>
+
+            <!-- (a) Plain-English Explanation -->
+            <div class="walk-part walk-part-a">
+              <span class="part-badge">A. Plain-English Concept</span>
+              <p class="plain-concept-text">
+                For each pixel in the image, the filter window centers on that pixel, multiplies each neighboring intensity by its Gaussian weight, sums the products, and rounds to the nearest integer.
+              </p>
+            </div>
+
+            <!-- (b) Mathematical Formula & Legend -->
+            <div class="walk-part walk-part-b">
+              <span class="part-badge">B. Formula & Symbol Legend</span>
+              <div class="formula-box">
+                <div class="math-expr">
+                  <span class="math-var">O</span>(<span class="math-var">i</span>, <span class="math-var">j</span>) = round &Biggl( &sum;<sub>u=&minus;r</sub><sup>r</sup> &sum;<sub>v=&minus;r</sub><sup>r</sup> <span class="math-var">w</span>(<span class="math-var">u</span>, <span class="math-var">v</span>) &middot; <span class="math-var">I</span>(<span class="math-var">i</span> + <span class="math-var">u</span>, <span class="math-var">j</span> + <span class="math-var">v</span>) &Biggr)
+                </div>
+                <div class="math-in-words">
+                  <strong>In words:</strong> The filtered pixel at coordinate (<span class="math-var">i</span>, <span class="math-var">j</span>) is the weighted sum of neighboring pixel intensities within radius <span class="math-var">r</span>, rounded to the nearest integer.
+                </div>
+              </div>
+
+              <div class="symbol-table-wrap">
+                <table class="symbol-table">
+                  <thead>
+                    <tr>
+                      <th>Symbol</th>
+                      <th>Mathematical Meaning</th>
+                      <th>Rule / Implementation</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><span class="math-var">O</span>(<span class="math-var">i</span>, <span class="math-var">j</span>)</td>
+                      <td>Filtered output pixel intensity</td>
+                      <td>Bounded to unsigned 8-bit [0, 255]</td>
+                    </tr>
+                    <tr>
+                      <td><span class="math-var">w</span>(<span class="math-var">u</span>, <span class="math-var">v</span>)</td>
+                      <td>Normalized Gaussian kernel weight at displacement (<span class="math-var">u</span>, <span class="math-var">v</span>)</td>
+                      <td>Precomputed via cv2.getGaussianKernel (Step 3)</td>
+                    </tr>
+                    <tr>
+                      <td><span class="math-var">r</span> = (<span class="math-var">k</span> &minus; 1) / 2</td>
+                      <td>Neighborhood radius: 1 (3&times;3), 2 (5&times;5), 3 (7&times;7), 4 (9&times;9)</td>
+                      <td id="legend-s4-radius">Radius r = 2 (5&times;5)</td>
+                    </tr>
+                    <tr>
+                      <td><span class="math-mono">BORDER_REFLECT_101</span></td>
+                      <td>Mirror reflection when (<span class="math-var">i+u</span>, <span class="math-var">j+v</span>) falls outside image boundary</td>
+                      <td>The edge pixel itself is NOT repeated (e.g. c, b | a, b, c)</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="footnote-line">
+                <strong>Symmetry Note:</strong> The 2D Gaussian function is radially symmetric (<span class="math-var">w</span>(<span class="math-var">u</span>, <span class="math-var">v</span>) = <span class="math-var">w</span>(&minus;<span class="math-var">u</span>, &minus;<span class="math-var">v</span>)), so spatial cross-correlation produces the exact same numerical output as true mathematical convolution (flipping the kernel).
+              </div>
+            </div>
+
+            <!-- (c) Worked Example with Real Numbers -->
+            <div class="walk-part walk-part-c">
+              <span class="part-badge">C. Worked Example (Live Step-by-Step Calculation)</span>
+              <div class="worked-box" id="step4-worked-box">
+                <div class="step4-summary-row">
+                  <div>
+                    <span class="worked-loc" id="step4-inspect-pixel">Target Pixel (r=3, c=3)</span>
+                    <div class="step4-calc-display" id="step4-calc-display">
+                      Accumulated Sum = <strong>174.12</strong> &rarr; round(174.12) = <strong>174</strong>
+                    </div>
+                  </div>
+                  <div class="match-badge-wrap">
+                    <span class="badge-match" id="step4-anim-match-badge">✓ Matches backend (±1 LSB)</span>
+                  </div>
+                </div>
+                <div class="corner-check-note" id="step4-corner-note">
+                  <strong>Corner Verification:</strong> Tested at image boundary (0, 0) with BORDER_REFLECT_101: Manual convolution matches OpenCV within 1 level for all 4 kernel sizes.
+                </div>
+              </div>
+            </div>
+
+            <!-- (d) Interactive Visual (Convolution Animator) -->
+            <div class="walk-part walk-part-d">
+              <div class="part-d-header">
+                <span class="part-badge">D. Visual (Sliding Window & Math Ticker)</span>
+                <div class="anim-mini-toolbar">
+                  <button type="button" class="btn btn-primary btn-sm" id="step4-btn-playpause">▶ Play</button>
+                  <button type="button" class="btn btn-ghost btn-sm" id="step4-btn-prev">⏮ Step</button>
+                  <button type="button" class="btn btn-ghost btn-sm" id="step4-btn-next">Step ⏭</button>
+                  <button type="button" class="btn btn-ghost btn-sm" id="step4-btn-restart">↺ Restart</button>
+                  <div class="mini-k-pills" id="step4-k-btns">
+                    <button type="button" class="mini-k-btn" data-k4="3">3×3</button>
+                    <button type="button" class="mini-k-btn active" data-k4="5">5×5</button>
+                    <button type="button" class="mini-k-btn" data-k4="7">7×7</button>
+                    <button type="button" class="mini-k-btn" data-k4="9">9×9</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 3-Column Animation Stage -->
+              <div class="anim-stage step4-embedded-stage">
+                <!-- Col 1: Input Patch -->
+                <div class="anim-col">
+                  <div class="col-head">
+                    <span>1. Noisy 8×8 Input</span>
+                    <span class="coord-tag" id="step4-coord-tag">(x=252, y=252)</span>
+                  </div>
+                  <div class="patch-matrix-grid" id="step4-input-grid"></div>
+                  <span class="reflect-note">Border: BORDER_REFLECT_101</span>
+                </div>
+
+                <!-- Col 2: Math Rows -->
+                <div class="anim-col math-col">
+                  <div class="col-head">
+                    <span>2. Window Products</span>
+                    <span class="coord-tag" id="step4-step-badge">Step 1 / 64</span>
+                  </div>
+                  <div class="math-scroll-table-wrap">
+                    <table class="clean-math-table">
+                      <thead>
+                        <tr>
+                          <th>Offset</th>
+                          <th>Pixel I</th>
+                          <th>Weight G</th>
+                          <th>Product</th>
+                        </tr>
+                      </thead>
+                      <tbody id="step4-math-rows"></tbody>
+                    </table>
+                  </div>
+                  <div class="math-totals-bar">
+                    <div class="total-line">
+                      <span>Accumulated Sum (&sum;):</span>
+                      <strong id="step4-sum-val">0.00</strong>
+                    </div>
+                    <div class="total-line">
+                      <span>Rounded Output:</span>
+                      <strong class="highlight-green" id="step4-rounded-val">0</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Col 3: Filtered Output Patch -->
+                <div class="anim-col">
+                  <div class="col-head">
+                    <span>3. Filtered 8×8 Output</span>
+                    <span class="coord-tag">Result</span>
+                  </div>
+                  <div class="patch-matrix-grid" id="step4-output-grid"></div>
+                  <span class="reflect-note">Click any cell to inspect</span>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- ======================================================== -->
+          <!-- STEP 5: Measure the result                               -->
+          <!-- ======================================================== -->
+          <article class="walk-step-card" id="walk-step-5" data-step-index="5">
+            <div class="step-card-header">
+              <div class="step-badge-tag">Step 5 of 6</div>
+              <h2 class="step-card-title">Measure the Result (MSE & PSNR)</h2>
+            </div>
+
+            <!-- (a) Plain-English Explanation -->
+            <div class="walk-part walk-part-a">
+              <span class="part-badge">A. Plain-English Concept</span>
+              <p class="plain-concept-text">
+                Filter performance is evaluated quantitatively by calculating the Mean Squared Error (average squared difference from the original) and Peak Signal-to-Noise Ratio (fidelity in decibels).
+              </p>
+            </div>
+
+            <!-- (b) Mathematical Formula & Legend -->
+            <div class="walk-part walk-part-b">
+              <span class="part-badge">B. Formula & Symbol Legend</span>
+              <div class="formula-box">
+                <div class="math-expr">
+                  <span class="math-var">MSE</span> = (1 / (<span class="math-var">H</span> &middot; <span class="math-var">W</span> &middot; <span class="math-var">C</span>)) &sum;<sub>x,y,c</sub> &bigl[ <span class="math-var">I</span><sub>clean</sub>(<span class="math-var">x</span>, <span class="math-var">y</span>, <span class="math-var">c</span>) &minus; <span class="math-var">I</span><sub>filtered</sub>(<span class="math-var">x</span>, <span class="math-var">y</span>, <span class="math-var">c</span>) &bigr]<sup>2</sup>
+                </div>
+                <div class="math-expr" style="margin-top: 0.5rem;">
+                  <span class="math-var">PSNR</span> = 10 &middot; log<sub>10</sub> &Biggl( \frac{255<sup>2</sup>}{<span class="math-var">MSE</span>} &Biggr) &nbsp;dB
+                </div>
+                <div class="math-in-words">
+                  <strong>In words:</strong> MSE averages the squared intensity errors across all pixels; PSNR measures how many decibels the maximum signal power (255<sup>2</sup> = 65025) exceeds this mean squared noise. Lower MSE is better; higher PSNR is better.
+                </div>
+              </div>
+
+              <div class="symbol-table-wrap">
+                <table class="symbol-table">
+                  <thead>
+                    <tr>
+                      <th>Symbol</th>
+                      <th>Mathematical Meaning</th>
+                      <th>Value in Current Pipeline Run</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><span class="math-var">H, W, C</span></td>
+                      <td>Image Height, Width, and Color Channels (C=3 for RGB)</td>
+                      <td id="legend-s5-dims">512 &times; 512 &times; 3</td>
+                    </tr>
+                    <tr>
+                      <td><span class="math-var">255<sup>2</sup> = 65025</span></td>
+                      <td>Maximum possible squared signal power for 8-bit unsigned images</td>
+                      <td>Constant: 65,025</td>
+                    </tr>
+                    <tr>
+                      <td><span class="math-var">MSE</span></td>
+                      <td>Mean Squared Error (average squared difference from clean reference)</td>
+                      <td id="legend-s5-mse">Lower is better (0 = identical)</td>
+                    </tr>
+                    <tr>
+                      <td><span class="math-var">PSNR</span></td>
+                      <td>Peak Signal-to-Noise Ratio (fidelity in decibels)</td>
+                      <td id="legend-s5-psnr">Higher is better (>25 dB is good restoration)</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- (c) Worked Example with Real Numbers -->
+            <div class="walk-part walk-part-c">
+              <span class="part-badge">C. Worked Example (Two-Part Evaluation)</span>
+              
+              <!-- Part A: Tiny 4-Pixel Example -->
+              <div class="worked-subpart">
+                <h4 class="subpart-title">Part A: Tiny Worked Example (4 Real Pixel Pairs)</h4>
+                <div class="symbol-table-wrap">
+                  <table class="symbol-table tiny-eval-table">
+                    <thead>
+                      <tr>
+                        <th>Pixel Coordinate</th>
+                        <th>Clean Pixel (I)</th>
+                        <th>Filtered Pixel (Î)</th>
+                        <th>Difference (I &minus; Î)</th>
+                        <th>Squared Difference (I &minus; Î)<sup>2</sup></th>
+                      </tr>
+                    </thead>
+                    <tbody id="step5-tiny-rows">
+                      <!-- Rendered dynamically from real patch pixels -->
+                    </tbody>
+                  </table>
+                </div>
+                <div class="subpart-calc-box" id="step5-part-a-calc">
+                  <strong>Sample 4-Pixel MSE:</strong> Sum / 4 = <span id="step5-sample-mse">12.25</span> &middot;
+                  <strong>Sample PSNR:</strong> 10 &middot; log<sub>10</sub>(65025 / <span id="step5-sample-mse-ref">12.25</span>) = <strong id="step5-sample-psnr">37.25 dB</strong>
+                </div>
+              </div>
+
+              <!-- Part B: Full Image Real Pipeline Metrics -->
+              <div class="worked-subpart" style="margin-top: 1rem;">
+                <h4 class="subpart-title">Part B: Full Image Real Pipeline Evaluation</h4>
+                <div class="pipeline-eval-cards">
+                  <div class="eval-card noisy-card">
+                    <span class="eval-card-tag">Noisy Input Baseline</span>
+                    <div class="eval-num" id="step5-full-noisy-mse">2147.82</div>
+                    <span class="eval-sub" id="step5-full-noisy-psnr">PSNR = 10 &middot; log<sub>10</sub>(65025 / 2147.82) = 14.81 dB</span>
+                  </div>
+
+                  <div class="eval-card-arrow">&rarr;</div>
+
+                  <div class="eval-card filtered-card">
+                    <span class="eval-card-tag" id="step5-filtered-tag">Gaussian Filtered (5×5 Best)</span>
+                    <div class="eval-num" id="step5-full-filt-mse">140.64</div>
+                    <span class="eval-sub" id="step5-full-filt-psnr">PSNR = 10 &middot; log<sub>10</sub>(65025 / 140.64) = 26.65 dB</span>
+                  </div>
+
+                  <div class="eval-card gain-card">
+                    <span class="eval-card-tag">Fidelity Improvement</span>
+                    <div class="eval-num text-success" id="step5-delta-psnr">+11.84 dB</div>
+                    <span class="eval-sub text-success" id="step5-delta-mse">&darr; 2007.18 MSE (93.5% noise eliminated)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- (d) Interactive Visual -->
+            <div class="walk-part walk-part-d">
+              <span class="part-badge">D. Visual (Error Distribution & Metrics Comparison)</span>
+              <div class="metrics-visual-summary">
+                <div class="progress-metric-line">
+                  <div class="p-metric-label">
+                    <span>Mean Squared Error (Lower is better)</span>
+                    <span id="step5-bar-mse-val">140.64 (Filtered) vs 2147.82 (Noisy)</span>
+                  </div>
+                  <div class="p-bar-bg">
+                    <div class="p-bar-fill fill-green" id="step5-bar-mse" style="width: 6.5%;"></div>
+                  </div>
+                </div>
+
+                <div class="progress-metric-line">
+                  <div class="p-metric-label">
+                    <span>Peak Signal-to-Noise Ratio (Higher is better)</span>
+                    <span id="step5-bar-psnr-val">26.65 dB (Filtered) vs 14.81 dB (Noisy)</span>
+                  </div>
+                  <div class="p-bar-bg">
+                    <div class="p-bar-fill fill-coral" id="step5-bar-psnr" style="width: 66.6%;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- ======================================================== -->
+          <!-- STEP 6: Choose the kernel size                           -->
+          <!-- ======================================================== -->
+          <article class="walk-step-card" id="walk-step-6" data-step-index="6">
+            <div class="step-card-header">
+              <div class="step-badge-tag">Step 6 of 6</div>
+              <h2 class="step-card-title">Choose Kernel Size (The Turnover Principle)</h2>
+            </div>
+
+            <!-- (a) Plain-English Explanation -->
+            <div class="walk-part walk-part-a">
+              <span class="part-badge">A. Plain-English Concept</span>
+              <p class="plain-concept-text">
+                Bigger kernels remove more noise but blur more detail, so the optimal kernel is found at the turnover point where noise reduction is maximized before edge blurring damages image fidelity.
+              </p>
+            </div>
+
+            <!-- (b) Mathematical Formula & Legend -->
+            <div class="walk-part walk-part-b">
+              <span class="part-badge">B. Principle & Multi-Kernel Trade-off</span>
+              <div class="formula-box">
+                <div class="math-expr">
+                  <span class="math-var">k</span><sup>*</sup> = argmax<sub>k &isin; {3, 5, 7, 9}</sub> <span class="math-var">PSNR</span>(<span class="math-var">k</span>)
+                </div>
+                <div class="math-in-words">
+                  <strong>In words:</strong> The optimal kernel diameter <span class="math-var">k</span><sup>*</sup> is the window size that maximizes PSNR. Below this point, noise suppression is incomplete; above this point, edge blurring damage exceeds noise reduction, causing PSNR to turn over and decline.
+                </div>
+              </div>
+
+              <div class="symbol-table-wrap">
+                <table class="symbol-table">
+                  <thead>
+                    <tr>
+                      <th>Kernel Size</th>
+                      <th>Heuristic &sigma;</th>
+                      <th>Filtered MSE</th>
+                      <th>Filtered PSNR</th>
+                      <th>Gain vs Noisy</th>
+                      <th>Restoration Behavior</th>
+                    </tr>
+                  </thead>
+                  <tbody id="step6-table-body">
+                    <!-- Populated dynamically with real numbers from pipeline -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- (c) Worked Example with Real Numbers -->
+            <div class="walk-part walk-part-c">
+              <span class="part-badge">C. Worked Example (Turnover Analysis)</span>
+              <div class="worked-box" id="step6-worked-box">
+                <div class="worked-calc-line highlight-calc" id="step6-turnover-statement">
+                  <strong>Turnover Identification:</strong> PSNR rises from 22.57 dB (3×3) to peak at <strong>26.65 dB (5×5)</strong>, then drops to 26.05 dB (9×9).
+                </div>
+                <p class="turnover-detail-p" id="step6-turnover-detail">
+                  The 5×5 kernel reduces MSE by over 93% with optimal noise suppression. Increasing to 7×7 or 9×9 causes the low-pass filter to smooth true high-frequency image textures (edges, hair, fabric), producing net fidelity loss.
+                </p>
+              </div>
+            </div>
+
+            <!-- (d) Interactive Visual (Turnover Chart) -->
+            <div class="walk-part walk-part-d">
+              <span class="part-badge">D. Visual (PSNR & MSE vs. Kernel Size Curve)</span>
+              <div class="step6-chart-container">
+                <div class="chart-svg-wrap">
+                  <svg id="step6-chart-svg" viewBox="0 0 540 220" width="100%" height="220"></svg>
+                </div>
+                <div class="takeaway-banner" style="margin-top: 1rem;">
+                  <span class="takeaway-icon">💡</span>
+                  <p class="takeaway-text">Bigger kernels remove more noise but blur more detail, and the best size depends on the image content and noise intensity.</p>
+                </div>
+              </div>
+            </div>
+          </article>
+
+        </div>
+
+        <!-- Walkthrough Persistent Bottom Navigation Bar -->
+        <div class="walk-footer-nav">
+          <button type="button" class="btn btn-ghost btn-sm" id="walk-btn-prev">
+            &larr; Back (Left Arrow)
+          </button>
+          <div class="walk-counter-text" id="walk-step-counter">
+            Step 1 of 6: The Image is Numbers
+          </div>
+          <button type="button" class="btn btn-primary btn-sm" id="walk-btn-next">
+            Next &rarr; (Right Arrow)
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- FORMULA SHEET MODAL (Printable Viva Reference Sheet)         -->
+    <!-- ============================================================ -->
+    <div class="modal-backdrop hidden" id="formula-sheet-modal" role="dialog" aria-modal="true">
+      <div class="modal-dialog formula-modal-dialog">
+        <div class="modal-top">
+          <div class="modal-header-text">
+            <h3 class="modal-heading">CS-305 Gaussian Filter Formula & Theory Sheet</h3>
+            <p class="modal-sub">Comprehensive mathematical reference sheet with symbol legends, printable for viva examination.</p>
+          </div>
+          <div class="modal-top-right">
+            <button type="button" class="btn btn-primary btn-sm" id="btn-print-formula-sheet">🖨 Print / Save PDF</button>
+            <button type="button" class="btn-close-modal" id="btn-close-formula-sheet" aria-label="Close">✕</button>
+          </div>
+        </div>
+
+        <div class="formula-sheet-content" id="printable-formula-sheet">
+          <div class="sheet-header-print-only">
+            <h2>CS-305 Computer Vision — Gaussian Filter Reference Sheet</h2>
+            <p>Mathematical Formulations, Derivations, and Quantitative Evaluation</p>
+          </div>
+
+          <!-- Section 1 -->
+          <div class="sheet-section">
+            <h4>1. 2D Discrete Image Representation</h4>
+            <div class="sheet-math">I(x, y, c) &isin; {0, 1, 2, &hellip;, 255}, &nbsp; x &isin; [0, W&minus;1], &nbsp; y &isin; [0, H&minus;1], &nbsp; c &isin; {R, G, B}</div>
+            <p class="sheet-desc">Images are 2D arrays of 8-bit unsigned integers (256 discrete levels per channel). Grayscale luminance is computed via ITU-R BT.601: <code>Y = 0.299R + 0.587G + 0.114B</code>.</p>
+          </div>
+
+          <!-- Section 2 -->
+          <div class="sheet-section">
+            <h4>2. Additive Noise Degradation Models</h4>
+            <div class="sheet-math">Gaussian (AWGN): &nbsp; I<sub>noisy</sub>(x, y) = clip(I<sub>clean</sub>(x, y) + N(x, y), 0, 255), &nbsp; N &sim; N(&mu;, &sigma;<sub>n</sub><sup>2</sup>)</div>
+            <div class="sheet-math">Salt & Pepper: &nbsp; P(I<sub>noisy</sub> = 0) = d / 2 (Pepper), &nbsp; P(I<sub>noisy</sub> = 255) = d / 2 (Salt)</div>
+            <p class="sheet-desc">Where <code>clip(v, 0, 255) = max(0, min(255, v))</code> enforces unsigned 8-bit dynamic range boundaries.</p>
+          </div>
+
+          <!-- Section 3 -->
+          <div class="sheet-section">
+            <h4>3. Gaussian Kernel & Auto-Sigma Scaling Rule</h4>
+            <div class="sheet-math">&sigma;<sub>blur</sub> = 0.3 &times; ((k &minus; 1) &middot; 0.5 &minus; 1.0) + 0.8</div>
+            <p class="sheet-desc">Heuristic scaling for odd kernel sizes: 3×3 &rarr; &sigma; = 0.80, 5×5 &rarr; &sigma; = 1.10, 7×7 &rarr; &sigma; = 1.40, 9×9 &rarr; &sigma; = 1.70.</p>
+          </div>
+
+          <!-- Section 4 -->
+          <div class="sheet-section">
+            <h4>4. 2D Gaussian Function & Unity-Gain Normalization</h4>
+            <div class="sheet-math">G(x, y) = exp(&minus;(x<sup>2</sup> + y<sup>2</sup>) / (2&sigma;<sup>2</sup>)), &nbsp; w(x, y) = G(x, y) / &sum;<sub>u,v</sub> G(u, v)</div>
+            <p class="sheet-desc">Kernel weights are normalized so &sum;<sub>u,v</sub> w(u, v) = 1.0000, guaranteeing unity gain and preserving overall scene brightness.</p>
+          </div>
+
+          <!-- Section 5 -->
+          <div class="sheet-section">
+            <h4>5. Linear Separability & Computational Complexity</h4>
+            <div class="sheet-math">G(x, y) = G<sub>1D</sub>(x) &middot; G<sub>1D</sub>(y) = exp(&minus;x<sup>2</sup> / 2&sigma;<sup>2</sup>) &middot; exp(&minus;y<sup>2</sup> / 2&sigma;<sup>2</sup>)</div>
+            <p class="sheet-desc">Separable 2D convolution reduces computational complexity from O(K<sup>2</sup>) to O(2K) operations per pixel, enabling real-time performance.</p>
+          </div>
+
+          <!-- Section 6 -->
+          <div class="sheet-section">
+            <h4>6. Spatial Convolution & Border Extrapolation</h4>
+            <div class="sheet-math">O(i, j) = round &Biggl( &sum;<sub>u=&minus;r</sub><sup>r</sup> &sum;<sub>v=&minus;r</sub><sup>r</sup> w(u, v) &middot; I(i + u, j + v) &Biggr), &nbsp; r = (k &minus; 1) / 2</div>
+            <p class="sheet-desc">OpenCV utilizes <code>BORDER_REFLECT_101</code>: mirror reflection without repeating the edge pixel itself (e.g. c, b | a, b, c). Due to radial symmetry (w(u,v) = w(-u,-v)), cross-correlation equals true convolution.</p>
+          </div>
+
+          <!-- Section 7 -->
+          <div class="sheet-section">
+            <h4>7. Quantitative Fidelity Metrics (MSE & PSNR)</h4>
+            <div class="sheet-math">MSE = (1 / (H &middot; W &middot; C)) &sum;<sub>x,y,c</sub> [ I<sub>clean</sub>(x,y,c) &minus; I<sub>filtered</sub>(x,y,c) ]<sup>2</sup></div>
+            <div class="sheet-math">PSNR = 10 &middot; log<sub>10</sub>(255<sup>2</sup> / MSE) dB = 10 &middot; log<sub>10</sub>(65025 / MSE) dB</div>
+            <p class="sheet-desc">Lower MSE indicates smaller reconstruction discrepancy. Higher PSNR indicates stronger signal fidelity relative to residual noise.</p>
+          </div>
+
+          <!-- Section 8 -->
+          <div class="sheet-section">
+            <h4>8. The Over-Smoothing Turnover Principle</h4>
+            <p class="sheet-desc">Noise reduction improves with kernel size up to an optimal window size (5×5 for &sigma;<sub>n</sub>=50 AWGN). Past this turnover point, high-frequency edge attenuation dominates over noise elimination, causing PSNR to decrease.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ============================================================ -->
+  <!-- "WATCH HOW IT WORKS" MODAL (8x8 Patch Convolution Animator)   -->
+  <!-- ============================================================ -->
+  <div class="modal-backdrop hidden" id="animator-modal" role="dialog" aria-modal="true">
+    <div class="modal-dialog">
+      
+      <div class="modal-top">
+        <div class="modal-header-text">
+          <h3 class="modal-heading">How 2D Convolution Works</h3>
+          <p class="modal-sub">Watch the Gaussian kernel slide across a real 8×8 image patch, multiply weights, and sum to the filtered pixel.</p>
+        </div>
+        <div class="modal-top-right">
+          <span class="badge-match" id="anim-match-badge">✓ Matches backend (±1 LSB)</span>
+          <button type="button" class="btn-close-modal" id="btn-close-animator" aria-label="Close">✕</button>
+        </div>
+      </div>
+
+      <!-- Animator Controls Toolbar -->
+      <div class="anim-toolbar">
+        <div class="anim-toolbar-left">
+          <button type="button" class="btn btn-primary btn-sm" id="btn-anim-playpause">▶ Play</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-anim-prev">⏮ Step Back</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-anim-next">Step Next ⏭</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-anim-restart">↺ Restart</button>
+        </div>
+
+        <div class="anim-toolbar-right">
+          <label class="anim-label">Kernel:</label>
+          <div class="anim-k-selector">
+            <button type="button" class="anim-k-btn" data-ak="3">3×3</button>
+            <button type="button" class="anim-k-btn active" data-ak="5">5×5</button>
+            <button type="button" class="anim-k-btn" data-ak="7">7×7</button>
+            <button type="button" class="anim-k-btn" data-ak="9">9×9</button>
+          </div>
+
+          <label class="anim-label" for="slider-anim-speed">Speed:</label>
+          <input type="range" id="slider-anim-speed" min="100" max="800" step="50" value="300" class="clean-slider anim-slider" />
+          <span class="anim-speed-val" id="anim-speed-val">300ms</span>
+        </div>
+      </div>
+
+      <!-- 3-Column Animation Stage -->
+      <div class="anim-stage">
+        
+        <!-- Col 1: Input 8x8 Patch -->
+        <div class="anim-col">
+          <div class="col-head">
+            <span>Input 8×8 Patch</span>
+            <span class="coord-tag" id="anim-coord-tag">(x=252, y=252)</span>
+          </div>
+          <div class="patch-matrix-grid" id="anim-input-grid"></div>
+          <span class="reflect-note">Border: BORDER_REFLECT_101</span>
+        </div>
+
+        <!-- Col 2: Live Math Calculation -->
+        <div class="anim-col math-col">
+          <div class="col-head">
+            <span>Convolution Math</span>
+            <span class="coord-tag" id="anim-step-badge">Step 1 / 64</span>
+          </div>
+          
+          <div class="math-scroll-table-wrap">
+            <table class="clean-math-table">
+              <thead>
+                <tr>
+                  <th>Offset</th>
+                  <th>Pixel I</th>
+                  <th>Weight G</th>
+                  <th>Product</th>
+                </tr>
+              </thead>
+              <tbody id="anim-math-rows"></tbody>
+            </table>
+          </div>
+
+          <div class="math-totals-bar">
+            <div class="total-line">
+              <span>Accumulated Sum (&sum;):</span>
+              <strong id="anim-sum-val">0.00</strong>
+            </div>
+            <div class="total-line">
+              <span>Rounded Output:</span>
+              <strong class="highlight-green" id="anim-rounded-val">0</strong>
+              <span class="match-mini-tag" id="anim-mini-match">✓ Exact</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Col 3: Output 8x8 Patch -->
+        <div class="anim-col">
+          <div class="col-head">
+            <span>Filtered 8×8 Output</span>
+            <span class="coord-tag">Result</span>
+          </div>
+          <div class="patch-matrix-grid" id="anim-output-grid"></div>
+          <span class="reflect-note">Click any cell to inspect</span>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-stack" id="toast-stack"></div>
+
+  <!-- Application Logic -->
+  <script src="app.js"></script>
+</body>
+</html>

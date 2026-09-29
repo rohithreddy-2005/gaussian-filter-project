@@ -22,5 +22,6 @@ ENV/
 
 # Scratch and test files
 scratch/
-test_*.py
 temp_*
+*uploaded_image*
+!web/test_*.py
